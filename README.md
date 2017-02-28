@@ -6,7 +6,13 @@ For a complete and useful roadbook setup, you usually need a motor controlled bo
 
 Since the off-the-shelf solutions like the [ICO Rallye](http://www.icoracing.com/collections/ico-racing-products/products/rallye-max-g) for the displays (you need two) and the [MD Roadbook Reader](http://www.rallymanagementservices.com/products/md-roadbook-reader) are quite expensive, I'm making my own setup and sharing everything I learn in the process with you.
 
-I've tried to emulate the most important features of the ICO Rallye so you won't miss anything.
+My goal is to emulate the most important features of the ICO Rallye so you won't miss anything.
+
+# IMPORTANT
+
+This is currently a work in progress, so the code is functional but not all of the features have been implemented yet. The implementation is going to be incremental and ordered by what I consider prioritary.
+
+I will try to keep this README file as updated as I can, and I'll put a list of the hardware components once I have the definitive ones.
 
 ### Hardware
 * Two configurable backlit LCD displays
@@ -30,9 +36,9 @@ I've tried to emulate the most important features of the ICO Rallye so you won't
 * Automatic calibration option
 * Configurable Magnetic Declination (http://www.magnetic-declination.com/)
 * Configurable distance measures (Kilometers or Miles)
+* All configuration parameters are persisted in EEPROM memory
 
-# IMPORTANT
+### Setup
 
-This is currently a work in progress, so the code is functional but not all of the features have been implemented yet. The implementation is going to be incremental and ordered by what I consider prioritary.
+* Install Arduino libraries [to-do]
 
-I will try to keep this README file as updated as I can, and I'll put a list of the hardware components once I have the definitive ones.
