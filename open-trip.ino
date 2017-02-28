@@ -31,38 +31,15 @@ const int pin_button_down = 16;
 const int pin_sensor = 17;
 
 int selectedMenuOption = 0;
-int seletedDisplayMenuOption = 0;
+int selectedDisplayMenuOption = 0;
 int btnHoldDelay = 1000;
 int btnHoldRepeat = 30;
 // int showInDisplay1 = 0;
 // int showInDisplay2 = 2;
 
-// float trip_partial = 0;
-// float circumference = 213.4;
-// float declinationAngle = 0.01425352; // Madrid
-
-const String menuOptions[] = {
-    "disp1",
-    "disp2",
-    "circ",
-    "decl",
-    "light",
-    "auto"
-};
-// const String displayMenuOptions[] = {
-//     "part",
-//     "total",
-//     "head",
-//     "speed"
-// };
-// const String lightMenuOptions[] = {
-//     "on",
-//     "off"
-// };
-// const String autoMenuOptions[] = {
-//     "on",
-//     "off"
-// };
+// IMPORTANT: 5 is the max index for menu options.
+// If new options are added, increase this index
+int maxMenuIndex = 5;
 
 long int displayValues[] = {
     0, // Partial
@@ -183,6 +160,9 @@ void onButtonUpPressed(Button& btn){
   Serial.println(F("button UP pressed"));
 
   if(inMenu){
+    HT1621_all_off(16, 0);
+    HT1621_all_off(16, 1);
+
     if(selectedMenuOption > 0)
       selectedMenuOption--;
   } else {
@@ -210,7 +190,10 @@ void onButtonCenterHold(Button& btn){
 void onButtonDownPressed(Button& btn){
   Serial.println(F("button DOWN pressed"));
   if(inMenu){
-    if(selectedMenuOption < ArraySize(menuOptions) - 1)
+    HT1621_all_off(16, 0);
+    HT1621_all_off(16, 1);
+    
+    if(selectedMenuOption < maxMenuIndex)
       selectedMenuOption++;
   } else {
     config.trip_partial -= 1;
@@ -275,10 +258,13 @@ void calculateHeading() {
 
 void updateScreens() {
   if(inMenu){
-    config.version = 000;
-    saveConfig();
-    Serial.println(F("--> CONFIG CLEARED"));
-    inMenu = false;
+    // config.version = 000;
+    // saveConfig();
+    // Serial.println(F("--> CONFIG CLEARED"));
+    // inMenu = false;
+
+    display_word(selectedMenuOption, 0);
+    display_word(3, 1);
   } else {
     display_data(displayValues[0], 1, 1, 0, 0);
     display_degrees(displayValues[2], 0, 0, 1, 1);

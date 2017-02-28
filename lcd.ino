@@ -112,16 +112,16 @@ char char_deg  = 0b11001100; // º
 // Menus
 char menu_display1[]      = { char_d, char_i, char_s, char_p, char_1, '\0' };
 char menu_display2[]      = { char_d, char_i, char_s, char_p, char_2, '\0' };
-char menu_circumference[] = { char_cc, char_ii, char_r, char_cc, '\0' };
-char menu_declination[]   = { char_d, char_ee, char_cc, char_ll, '\0' };
+char menu_circumference[] = { char_cc, char_ii, char_r, char_cc, char_null, '\0' };
+char menu_declination[]   = { char_d, char_ee, char_cc, char_ll, char_null, '\0' };
 char menu_light[]         = { char_ll, char_ii, char_g, char_hh, char_t, '\0' };
-char menu_auto[]          = { char_aa, char_uu, char_t, char_oo, '\0' };
-char menu_partial[]       = { char_p, char_aa, char_r, char_t, '\0' };
+char menu_auto[]          = { char_aa, char_uu, char_t, char_oo, char_null, '\0' };
+char menu_partial[]       = { char_p, char_aa, char_r, char_t, char_null, '\0' };
 char menu_total[]         = { char_t, char_oo, char_t, char_aa, char_ll, '\0' };
-char menu_heading[]       = { char_hh, char_ee, char_aa, char_d, '\0' };
+char menu_heading[]       = { char_hh, char_ee, char_aa, char_d, char_null, '\0' };
 char menu_speed[]         = { char_s, char_p, char_ee, char_ee, char_d, '\0' };
-char menu_on[]            = { char_0, char_n, '\0' };
-char menu_off[]           = { char_0, char_f, char_f, '\0' };
+char menu_on[]            = { char_0, char_n, char_null, char_null, char_null, '\0' };
+char menu_off[]           = { char_0, char_f, char_f, char_null, char_null, '\0' };
 
 char* menu[] = {
   menu_display1,
@@ -410,10 +410,10 @@ void display_degrees(long int t, int p, char s1, char s2, int screen){
 }
 
 
-void displayWord(char word[], int screen){
-  HT1621_all_off(16, screen);
+void display_word(int word, int screen){
+  //HT1621_all_off(16, screen);
 
-  char* w = word;
+  char* w = menu[word];
   int i = 4; // It's 4 because the display has 5 digits (0 counts as one)
   
   for (; *w != '\0'; ++w){
@@ -422,6 +422,4 @@ void displayWord(char word[], int screen){
   }
   //int arraySize = w - word;
 }
-
-
 
