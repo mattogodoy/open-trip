@@ -31,15 +31,17 @@ const int pin_button_down = 16;
 const int pin_sensor = 17;
 
 int selectedMenuOption = 0;
-int selectedDisplayMenuOption = 0;
+int selectedSubMenuOption = 0;
 int btnHoldDelay = 1000;
 int btnHoldRepeat = 30;
 // int showInDisplay1 = 0;
 // int showInDisplay2 = 2;
 
-// IMPORTANT: 5 is the max index for menu options.
-// If new options are added, increase this index
+// IMPORTANT: these are the indexes for menu[] array.
+// If new options are added, update these values.
 int maxMenuIndex = 5;
+int minSubmenuIndex = 6; // Partial
+int maxSubmenuIndex = 9; // Speed
 
 long int displayValues[] = {
     0, // Partial
@@ -61,6 +63,8 @@ struct Configuration {
 } config;
 
 bool inMenu = false;
+bool inSubMenu = false;
+bool editMode = false;
 bool lightsOn = false;
 bool autoCalibrate = false;
 
@@ -94,7 +98,7 @@ void setup() {
   button_up.onPress(onButtonUpPressed);
   button_up.onHoldRepeat(btnHoldDelay, btnHoldRepeat, onButtonUpPressed);
 
-  button_center.onPress(onButtonCenterPressed);
+  button_center.onRelease(onButtonCenterReleased);
   button_center.onHold(btnHoldDelay, onButtonCenterHold);
 
   button_down.onPress(onButtonDownPressed);
@@ -165,6 +169,8 @@ void onButtonUpPressed(Button& btn){
 
     if(selectedMenuOption > 0)
       selectedMenuOption--;
+  } else if(inSubMenu){
+  } else if(editMode){
   } else {
     config.trip_partial += 1;
     displayValues[0] = config.trip_partial;
@@ -173,17 +179,50 @@ void onButtonUpPressed(Button& btn){
   updateScreens();
 }
 
-void onButtonCenterPressed(Button& btn){
-  Serial.println(F("button CENTER pressed"));
-  config.trip_partial = 0;
-  displayValues[0] = config.trip_partial;
+void onButtonCenterReleased(Button& btn, int duration){
+  // This avoids calling this callback when releasing
+  // the center button after a Hold event
+  if(duration >= btnHoldDelay)
+    return;
 
+  Serial.println(F("button CENTER pressed"));
+  if(inMenu){
+    inMenu = false;
+    inSubMenu = true;
+    Serial.println(F("State changed: inSubMenu"));
+  } else if(inSubMenu){
+    inSubMenu = false;
+    editMode = true;
+    Serial.println(F("State changed: editMode"));
+  } else if(editMode){
+    // TO-DO: Do something in edit mode
+  } else {
+    config.trip_partial = 0;
+    displayValues[0] = config.trip_partial;
+  }
   updateScreens();
 }
 
 void onButtonCenterHold(Button& btn){
   Serial.println(F("button CENTER hold"));
-  inMenu = !inMenu;
+
+  if(inMenu){
+    inMenu = false;
+    inSubMenu = false;
+    Serial.println(F("State changed: none"));
+  } else if(inSubMenu){
+    inSubMenu = false;
+    inMenu = true;
+    Serial.println(F("State changed: inMenu"));
+  } else if(editMode){
+    editMode = false;
+    inSubMenu = true;
+    Serial.println(F("State changed: inSubMenu"));
+  } else {
+    inMenu = true;
+    Serial.println(F("State changed: inMenu"));
+  }
+
   updateScreens();
 }
 
@@ -195,6 +234,8 @@ void onButtonDownPressed(Button& btn){
     
     if(selectedMenuOption < maxMenuIndex)
       selectedMenuOption++;
+  } else if(inSubMenu){
+  } else if(editMode){
   } else {
     config.trip_partial -= 1;
 
@@ -264,7 +305,13 @@ void updateScreens() {
     // inMenu = false;
 
     display_word(selectedMenuOption, 0);
-    display_word(3, 1);
+    display_word(minSubmenuIndex, 1);
+  } else if(inSubMenu){
+    display_word(selectedSubMenuOption, 0);
+    display_data(12345, 1, 1, 0, 1);
+  } else if(editMode){
+    display_data(88888, 1, 1, 0, 0);
+    display_data(88888, 1, 1, 0, 1);
   } else {
     display_data(displayValues[0], 1, 1, 0, 0);
     display_degrees(displayValues[2], 0, 0, 1, 1);
