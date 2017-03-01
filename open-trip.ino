@@ -14,21 +14,21 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_HMC5883_U.h>
 
-const int pin_display_a_cs = 2;
-const int pin_display_a_wr = 3;
-const int pin_display_a_data = 4;
-const int pin_display_b_cs = 5;
-const int pin_display_b_wr = 6;
-const int pin_display_b_data = 7;
-const int pin_joystick_up = 8;
-const int pin_joystick_down = 9;
-const int pin_motor_output_a = 10;
-const int pin_motor_output_b = 11;
-const int pin_light = 12;
+const int pin_sensor = 2;
+const int pin_display_a_cs = 3;
+const int pin_display_a_wr = 4;
+const int pin_display_a_data = 5;
+const int pin_display_b_cs = 6;
+const int pin_display_b_wr = 7;
+const int pin_display_b_data = 8;
+const int pin_joystick_up = 9;
+const int pin_joystick_down = 10;
+const int pin_motor_output_a = 11;
+const int pin_motor_output_b = 12;
 const int pin_button_up = 14;
 const int pin_button_center = 15;
 const int pin_button_down = 16;
-const int pin_sensor = 17;
+const int pin_light = 17;
 
 int selectedMenuOption = 0;
 int selectedSubMenuOption = 0;
@@ -74,10 +74,14 @@ const long displayRefreshInterval = 500;
 PushButton button_up = PushButton(pin_button_up);
 PushButton button_center = PushButton(pin_button_center);
 PushButton button_down = PushButton(pin_button_down);
-PushButton sensor = PushButton(pin_sensor);
+// PushButton sensor = PushButton(pin_sensor);
 
 // Assign a unique ID to this sensor at the same time
 Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
+
+// Interruption variables for wheel sensor
+const byte interruptPin = pin_sensor;
+volatile byte revs = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -90,6 +94,9 @@ void setup() {
   pinMode(pin_display_b_cs, OUTPUT);
   pinMode(pin_display_b_wr, OUTPUT);
   pinMode(pin_display_b_data, OUTPUT);
+
+  pinMode(interruptPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), revsCount, FALLING);
 
   // Init displays
   Init_1621(0);
@@ -104,7 +111,7 @@ void setup() {
   button_down.onPress(onButtonDownPressed);
   button_down.onHoldRepeat(btnHoldDelay, btnHoldRepeat, onButtonDownPressed);
 
-  sensor.onPress(onSensorDetect);
+  // sensor.onPress(onSensorDetect);
 
   // Initialise the compass
   if(!mag.begin()) {
@@ -116,9 +123,32 @@ void loop() {
   button_up.update();
   button_center.update();
   button_down.update();
-  sensor.update();
+  //sensor.update();
+  sensorUpdate();
 
   calculateHeading();
+}
+
+// Interrupt Service Routine (ISR)
+void revsCount() {
+  revs++;
+}
+
+void sensorUpdate() {
+  // This will count as many revolutions as added by 
+  // the interruptions and reset them for the next loop
+  config.trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  
+  if(revs > 0){
+    revs = 0;
+    
+    Serial.println(F("SENSOR detected"));
+    displayValues[0] = config.trip_partial;
+    Serial.print("trip_partial: ");
+    Serial.println(config.trip_partial, 6);
+    
+    updateScreens();
+  }
 }
 
 void loadConfig() {
@@ -248,16 +278,17 @@ void onButtonDownPressed(Button& btn){
   updateScreens();
 }
 
-void onSensorDetect(Button& btn){
-  Serial.println(F("SENSOR detected"));
-  config.trip_partial += config.circumference / 100000.0; // Count 1 every 100 meters
-  displayValues[0] = config.trip_partial;
+// void onSensorDetect(Button& btn){
+//   Serial.println(F("SENSOR detected"));
+//   //config.trip_partial += config.circumference / 100000.0; // Count 1 every 100 meters
+//   config.trip_partial += 1;
+//   displayValues[0] = config.trip_partial;
 
-  Serial.print("trip_partial: ");
-  Serial.println(config.trip_partial, 6);
+//   Serial.print("trip_partial: ");
+//   Serial.println(config.trip_partial, 6);
 
-  updateScreens();
-}
+//   updateScreens();
+// }
 
 void calculateHeading() {
   unsigned long currentMillis = millis();

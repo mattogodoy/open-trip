@@ -30,17 +30,17 @@
 // ====== SCREEN A =======
 // =======================
 //Define port     HT1621 data port
-#define pin_display_a_cs   2  //Pin 2 as chip selection output
-#define pin_display_a_wr   3  //Pin 3 as read clock  output
-#define pin_display_a_data 4  //Pin 4 as Serial data output
+#define pin_display_a_cs   pin_display_a_cs  //Pin 3 as chip selection output
+#define pin_display_a_wr   pin_display_a_wr  //Pin 4 as read clock  output
+#define pin_display_a_data pin_display_a_data  //Pin 5 as Serial data output
 
 // =======================
 // ====== SCREEN b =======
 // =======================
 //Define port     HT1621 data port
-#define pin_display_b_cs   5  //Pin 6 as chip selection output
-#define pin_display_b_wr   6  //Pin 7 as read clock  output
-#define pin_display_b_data 7  //Pin 8 as Serial data output
+#define pin_display_b_cs   pin_display_b_cs  //Pin 6 as chip selection output
+#define pin_display_b_wr   pin_display_b_wr  //Pin 7 as read clock  output
+#define pin_display_b_data pin_display_b_data  //Pin 8 as Serial data output
 
 
 /*0,1,2,3,4,5,6,7,8,9,A,b,C,c,d,E,F,*/    
