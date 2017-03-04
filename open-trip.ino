@@ -175,7 +175,7 @@ void loadConfig() {
     config.autoCalibrate = 0;
     config.trip_partial = 0;
     config.trip_total = 0;
-    config.circumference = 2134;
+    config.circumference = 2007;
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
 
@@ -330,19 +330,24 @@ void calculateHeading() {
 
 void updateScreens() {
   if(inMenu){
-    // config.version = 000;
-    // saveConfig();
-    // Serial.println(F("--> CONFIG CLEARED"));
-    // inMenu = false;
+    config.version = 000;
+    saveConfig();
+    Serial.println(F("--> CONFIG CLEARED"));
+    inMenu = false;
 
-    display_word(selectedMenuOption, 0);
-    display_word(minSubmenuIndex, 1);
-  } else if(inSubMenu){
-    display_word(selectedSubMenuOption, 0);
-    display_data(12345, 1, 1, 0, 1);
-  } else if(editMode){
-    display_data(88888, 1, 1, 0, 0);
-    display_data(88888, 1, 1, 0, 1);
+  //   display_word(selectedMenuOption, 0);
+  //   display_word(minSubmenuIndex, 1);
+  // } else if(inSubMenu){
+  //   display_word(selectedSubMenuOption, 0);
+  //   display_data(12345, 1, 1, 0, 1);
+  // } else if(editMode){
+  //   display_data(88888, 1, 1, 0, 0);
+  //   // display_data(88888, 1, 1, 0, 1);
+  //   HT1621_all_off(6, 1);
+  //   display_mark(1, 1);
+  //   delay(500);
+  //   clear_mark(1, 1);
+  //   delay(500);
   } else {
     display_data(displayValues[0], 1, 1, 0, 0);
     display_degrees(displayValues[2], 0, 0, 1, 1);

@@ -423,3 +423,23 @@ void display_word(int word, int screen){
   //int arraySize = w - word;
 }
 
+
+void display_mark(int up, int screen){
+  char arrow = 0x00;
+  sbi(arrow, 4);
+
+  if(up != 0)
+    Write_1621(6, arrow, screen);
+  else
+    Write_1621(8, arrow, screen);
+}
+
+void clear_mark(int up, int screen){
+  char arrow = 0x00;
+  cbi(arrow, 4);
+
+  if(up == 0)
+    Write_1621(6, arrow, screen);
+  else
+    Write_1621(8, arrow, screen);
+}
