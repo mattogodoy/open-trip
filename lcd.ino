@@ -121,8 +121,10 @@ char menu_partial[]       = { char_p, char_aa, char_r, char_t, char_null, '\0' }
 char menu_total[]         = { char_t, char_oo, char_t, char_aa, char_ll, '\0' };
 char menu_heading[]       = { char_hh, char_ee, char_aa, char_d, char_null, '\0' };
 char menu_speed[]         = { char_s, char_p, char_ee, char_ee, char_d, '\0' };
-char menu_on[]            = { char_0, char_n, char_null, char_null, char_null, '\0' };
-char menu_off[]           = { char_0, char_f, char_f, char_null, char_null, '\0' };
+char menu_on[]            = { char_oo, char_n, char_null, char_null, char_null, '\0' };
+char menu_off[]           = { char_oo, char_f, char_f, char_null, char_null, '\0' };
+char menu_yes[]           = { char_y, char_ee, char_s, char_null, char_null, '\0' };
+char menu_no[]            = { char_n, char_oo, char_null, char_null, char_null, '\0' };
 
 char* menu[] = {
   menu_display1,
@@ -137,7 +139,9 @@ char* menu[] = {
   menu_heading,
   menu_speed,
   menu_on,
-  menu_off
+  menu_off,
+  menu_yes,
+  menu_no
 };
 
 

@@ -58,8 +58,6 @@ struct Configuration {
   int showInDisplay2;
   int lightsOn;
   int autoCalibrate;
-  // float trip_partial;
-  // float trip_total;
   int circumference;
   float declinationAngle;
 } config;
@@ -164,8 +162,6 @@ void loadConfig() {
   Serial.println(config.showInDisplay2);
   Serial.println(config.lightsOn);
   Serial.println(config.autoCalibrate);
-  // Serial.println(config.trip_partial);
-  // Serial.println(config.trip_total);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
 
@@ -176,9 +172,7 @@ void loadConfig() {
     config.showInDisplay2 = 2;
     config.lightsOn = 0;
     config.autoCalibrate = 0;
-    // config.trip_partial = 0;
-    // config.trip_total = 0;
-    config.circumference = 2007;
+    config.circumference = 2007; // KTM 1190 Adventure with Conti Trail Attack
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
 
@@ -197,8 +191,6 @@ void saveConfig(){
   Serial.println(config.showInDisplay2);
   Serial.println(config.lightsOn);
   Serial.println(config.autoCalibrate);
-  // Serial.println(config.trip_partial);
-  // Serial.println(config.trip_total);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
 }
@@ -223,6 +215,10 @@ void onButtonUpPressed(Button& btn){
       case 5:
         minSubmenuIndex = 11;
         maxSubmenuIndex = 12;
+        break;
+      case 6:
+        minSubmenuIndex = 13;
+        maxSubmenuIndex = 14;
         break;
     }
 
@@ -271,6 +267,9 @@ void onButtonCenterReleased(Button& btn, int duration){
       case 5:
         selectedSubMenuOption = 12 - config.autoCalibrate; // 12 is the number of the position of the ON / OFF in menu
         break;
+      case 6:
+        selectedSubMenuOption = 14;
+        break;
     }
 
     inMenu = false;
@@ -292,11 +291,12 @@ void onButtonCenterReleased(Button& btn, int duration){
         saveConfig();
         inSubMenu = false;
         break;
-      // default:
-      //   inSubMenu = false;
-      //   editMode = true;
-      //   Serial.println(F("State changed: editMode"));
-      //   break;
+      case 6:
+        if(selectedSubMenuOption == 13){
+          resetConfig();
+          inSubMenu = false;
+        }
+        break;
     }
   } else {
     trip_partial = 0;
@@ -341,14 +341,14 @@ void onButtonDownPressed(Button& btn){
         minSubmenuIndex = 7;
         maxSubmenuIndex = 10;
         break;
-      case 2:
-      case 3:
-        // I'ts numeric, no submenu options
-        break;
       case 4:
       case 5:
         minSubmenuIndex = 11;
         maxSubmenuIndex = 12;
+        break;
+      case 6:
+        minSubmenuIndex = 13;
+        maxSubmenuIndex = 14;
         break;
     }
 
@@ -437,15 +437,17 @@ void calculateSpeed(){
   }
 }
 
+void resetConfig(){
+  config.version = 000;
+  saveConfig();
+  Serial.println(F("--> CONFIG CLEARED"));
+  inMenu = false;
+  inSubMenu = false;
+}
+
 void updateScreens() {
   if(inMenu){
-    // config.version = 000;
-    // saveConfig();
-    // Serial.println(F("--> CONFIG CLEARED"));
-    // inMenu = false;
-
     display_word(selectedMenuOption, 0);
-    // display_word(minSubmenuIndex, 1);
     HT1621_all_off(6, 1);
   } else if(inSubMenu){
     display_word(selectedMenuOption, 0);
@@ -455,6 +457,7 @@ void updateScreens() {
       case 1:
       case 4:
       case 5:
+      case 6:
         display_word(selectedSubMenuOption, 1);
         break;
       case 2:
