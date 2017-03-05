@@ -41,6 +41,7 @@ int selectedSubMenuOption = minSubmenuIndex;
 int btnHoldDelay = 1000;
 int btnHoldRepeat = 30;
 
+// This is to convert float values to int and display them
 long int displayValues[] = {
     0, // Partial
     0, // Total
@@ -48,14 +49,17 @@ long int displayValues[] = {
     0  // Speed
 };
 
+float trip_partial = 0;
+float trip_total = 0;
+
 struct Configuration {
   int version;
   int showInDisplay1;
   int showInDisplay2;
   int lightsOn;
   int autoCalibrate;
-  float trip_partial;
-  float trip_total;
+  // float trip_partial;
+  // float trip_total;
   int circumference;
   float declinationAngle;
 } config;
@@ -66,6 +70,8 @@ bool lightsOn = false;
 bool autoCalibrate = false;
 
 unsigned long previousMillis = 0;
+unsigned long previousMillisSpeed = 0;
+float previousTripTotal = 0;
 const long displayRefreshInterval = 500;
 
 PushButton button_up = PushButton(pin_button_up);
@@ -121,6 +127,7 @@ void loop() {
   button_down.update();
   sensorUpdate();
   calculateHeading();
+  calculateSpeed();
 }
 
 // Interrupt Service Routine (ISR)
@@ -131,15 +138,17 @@ void revsCount() {
 void sensorUpdate() {
   // This will count as many revolutions as added by 
   // the interruptions and reset them for the next loop
-  config.trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  trip_total += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
   
   if(revs > 0){
     revs = 0;
     
     Serial.println(F("SENSOR detected"));
-    displayValues[0] = config.trip_partial;
+    displayValues[0] = trip_partial;
+    displayValues[1] = trip_total;
     Serial.print("trip_partial: ");
-    Serial.println(config.trip_partial, 6);
+    Serial.println(trip_partial, 6);
     
     updateScreens();
   }
@@ -155,8 +164,8 @@ void loadConfig() {
   Serial.println(config.showInDisplay2);
   Serial.println(config.lightsOn);
   Serial.println(config.autoCalibrate);
-  Serial.println(config.trip_partial);
-  Serial.println(config.trip_total);
+  // Serial.println(config.trip_partial);
+  // Serial.println(config.trip_total);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
 
@@ -167,8 +176,8 @@ void loadConfig() {
     config.showInDisplay2 = 2;
     config.lightsOn = 0;
     config.autoCalibrate = 0;
-    config.trip_partial = 0;
-    config.trip_total = 0;
+    // config.trip_partial = 0;
+    // config.trip_total = 0;
     config.circumference = 2007;
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
@@ -188,8 +197,8 @@ void saveConfig(){
   Serial.println(config.showInDisplay2);
   Serial.println(config.lightsOn);
   Serial.println(config.autoCalibrate);
-  Serial.println(config.trip_partial);
-  Serial.println(config.trip_total);
+  // Serial.println(config.trip_partial);
+  // Serial.println(config.trip_total);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
 }
@@ -232,8 +241,10 @@ void onButtonUpPressed(Button& btn){
       }
     }
   } else {
-    config.trip_partial += 1;
-    displayValues[0] = config.trip_partial;
+    trip_partial += 1;
+    trip_total += 1;
+    displayValues[0] = trip_partial;
+    displayValues[1] = trip_total;
   }
 
   updateScreens();
@@ -288,8 +299,8 @@ void onButtonCenterReleased(Button& btn, int duration){
       //   break;
     }
   } else {
-    config.trip_partial = 0;
-    displayValues[0] = config.trip_partial;
+    trip_partial = 0;
+    displayValues[0] = trip_partial;
   }
   updateScreens();
 }
@@ -356,13 +367,19 @@ void onButtonDownPressed(Button& btn){
       }
     }
   } else {
-    config.trip_partial -= 1;
+    trip_partial -= 1;
+    trip_total -= 1;
 
-    if(config.trip_partial < 0){
-      config.trip_partial = 0;
+    if(trip_partial < 0){
+      trip_partial = 0;
     }
 
-    displayValues[0] = config.trip_partial;
+    if(trip_total < 0){
+      trip_total = 0;
+    }
+
+    displayValues[0] = trip_partial;
+    displayValues[1] = trip_total;
   }
   updateScreens();
 }
@@ -405,6 +422,21 @@ void calculateHeading() {
   }
 }
 
+void calculateSpeed(){
+  unsigned long currentMillis = millis();
+
+  // Update data and display
+  if (currentMillis - previousMillisSpeed >= 1000) {
+    previousMillisSpeed = currentMillis;
+
+    float kms = (trip_total - previousTripTotal) / 10;
+    displayValues[3] = kms * 3600;
+    previousTripTotal = trip_total;
+ 
+    updateScreens();
+  }
+}
+
 void updateScreens() {
   if(inMenu){
     // config.version = 000;
@@ -439,13 +471,13 @@ void updateScreens() {
         display_number(displayValues[0], 1, 1, 0, 0);
         break;
       case 1:
-        display_number(displayValues[1], 1, 0, 0, 0);
+        display_number(displayValues[1], 1, 0, 1, 0);
         break;
       case 2:
-        display_degrees(displayValues[2], 0, 0, 1, 0);
+        display_degrees(displayValues[2], 0, 0, 0, 0);
         break;
       case 3:
-        display_number(displayValues[3], 1, 0, 0, 0);
+        display_number(displayValues[3], 1, 1, 1, 0);
         break;
     }
 
@@ -455,15 +487,14 @@ void updateScreens() {
         display_number(displayValues[0], 1, 1, 0, 1);
         break;
       case 1:
-        display_number(displayValues[1], 1, 0, 0, 1);
+        display_number(displayValues[1], 1, 0, 1, 1);
         break;
       case 2:
-        display_degrees(displayValues[2], 0, 0, 1, 1);
+        display_degrees(displayValues[2], 0, 0, 0, 1);
         break;
       case 3:
-        display_number(displayValues[3], 1, 0, 0, 1);
+        display_number(displayValues[3], 1, 1, 1, 1);
         break;
     }
   }
 }
-
