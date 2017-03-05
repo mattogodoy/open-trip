@@ -116,6 +116,7 @@ char menu_circumference[] = { char_cc, char_ii, char_r, char_cc, char_null, '\0'
 char menu_declination[]   = { char_d, char_ee, char_cc, char_ll, char_null, '\0' };
 char menu_light[]         = { char_ll, char_ii, char_g, char_hh, char_t, '\0' };
 char menu_auto[]          = { char_aa, char_uu, char_t, char_oo, char_null, '\0' };
+char menu_reset[]         = { char_r, char_ee, char_s, char_ee, char_t, '\0' };
 char menu_partial[]       = { char_p, char_aa, char_r, char_t, char_null, '\0' };
 char menu_total[]         = { char_t, char_oo, char_t, char_aa, char_ll, '\0' };
 char menu_heading[]       = { char_hh, char_ee, char_aa, char_d, char_null, '\0' };
@@ -130,6 +131,7 @@ char* menu[] = {
   menu_declination,
   menu_light,
   menu_auto,
+  menu_reset,
   menu_partial,
   menu_total,
   menu_heading,
@@ -314,13 +316,13 @@ void LCDon(int screen){
 
 
 /**************************************************************************** 
-   Name: display_data(unsigned long int t,int p,char bat1,char bat2,char bat3) Display  data
+   Name: display_number(unsigned long int t,int p,char bat1,char bat2,char bat3) Display  data
    t : Data to be displayed
    p : Display decimal
    s1,s2 : Left side of the Triangle
 *****************************************************************************/ 
 
-void display_data(long int t, int p, char s1, char s2, int screen){
+void display_number(long int t, int p, char s1, char s2, int screen){
   uchar i;
 
   if(t > 99999) t = 99999; // Avoid overflow
@@ -443,3 +445,4 @@ void clear_mark(int up, int screen){
   else
     Write_1621(8, arrow, screen);
 }
+

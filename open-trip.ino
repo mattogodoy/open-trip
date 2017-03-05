@@ -30,18 +30,16 @@ const int pin_button_center = 15;
 const int pin_button_down = 16;
 const int pin_light = 17;
 
-int selectedMenuOption = 0;
-int selectedSubMenuOption = 0;
-int btnHoldDelay = 1000;
-int btnHoldRepeat = 30;
-// int showInDisplay1 = 0;
-// int showInDisplay2 = 2;
-
 // IMPORTANT: these are the indexes for menu[] array.
 // If new options are added, update these values.
-int maxMenuIndex = 5;
-int minSubmenuIndex = 6; // Partial
-int maxSubmenuIndex = 9; // Speed
+int maxMenuIndex = 6;
+int minSubmenuIndex = 7; // Partial
+int maxSubmenuIndex = 10; // Speed
+
+int selectedMenuOption = 0;
+int selectedSubMenuOption = minSubmenuIndex;
+int btnHoldDelay = 1000;
+int btnHoldRepeat = 30;
 
 long int displayValues[] = {
     0, // Partial
@@ -74,7 +72,6 @@ const long displayRefreshInterval = 500;
 PushButton button_up = PushButton(pin_button_up);
 PushButton button_center = PushButton(pin_button_center);
 PushButton button_down = PushButton(pin_button_down);
-// PushButton sensor = PushButton(pin_sensor);
 
 // Assign a unique ID to this sensor at the same time
 Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
@@ -188,6 +185,16 @@ void loadConfig() {
 void saveConfig(){
   EEPROM_write(0, config);
   Serial.println(F("---> CONFIG SAVED!"));
+
+  Serial.println(config.version);
+  Serial.println(config.showInDisplay1);
+  Serial.println(config.showInDisplay2);
+  Serial.println(config.lightsOn);
+  Serial.println(config.autoCalibrate);
+  Serial.println(config.trip_partial);
+  Serial.println(config.trip_total);
+  Serial.println(config.circumference);
+  Serial.println(config.declinationAngle, 6);
 }
 
 void onButtonUpPressed(Button& btn){
@@ -199,7 +206,31 @@ void onButtonUpPressed(Button& btn){
 
     if(selectedMenuOption > 0)
       selectedMenuOption--;
+
+    switch(selectedMenuOption){
+      case 0:
+      case 1:
+        minSubmenuIndex = 7;
+        maxSubmenuIndex = 10;
+        break;
+      case 2:
+      case 3:
+        // I'ts numeric, no submenu options
+        break;
+      case 4:
+      case 5:
+        minSubmenuIndex = 11;
+        maxSubmenuIndex = 12;
+        break;
+    }
+
+    selectedSubMenuOption = minSubmenuIndex;
   } else if(inSubMenu){
+    HT1621_all_off(16, 0);
+    HT1621_all_off(16, 1);
+    
+    if(selectedSubMenuOption > minSubmenuIndex)
+      selectedSubMenuOption--;
   } else if(editMode){
   } else {
     config.trip_partial += 1;
@@ -217,13 +248,50 @@ void onButtonCenterReleased(Button& btn, int duration){
 
   Serial.println(F("button CENTER pressed"));
   if(inMenu){
+    switch(selectedMenuOption){
+      case 0:
+        selectedSubMenuOption = maxMenuIndex + config.showInDisplay1 + 1;
+        break;
+      case 1:
+        selectedSubMenuOption = maxMenuIndex + config.showInDisplay2 + 1;
+        break;
+      // case 2:
+      //   display_word(selectedSubMenuOption, 0);
+      //   display_number(config.circumference, 0, 0, 0, 1);
+      //   break;
+      // case 3:
+      //   display_word(selectedSubMenuOption, 0);
+      //   display_number(config.declinationAngle, 0, 0, 0, 1);
+      //   break;
+      case 4:
+        selectedSubMenuOption = 12 - config.lightsOn; // 12 is the number of the position of the ON / OFF in menu
+        break;
+      case 5:
+        selectedSubMenuOption = 12 - config.autoCalibrate; // 12 is the number of the position of the ON / OFF in menu
+        break;
+    }
+
     inMenu = false;
     inSubMenu = true;
     Serial.println(F("State changed: inSubMenu"));
   } else if(inSubMenu){
-    inSubMenu = false;
-    editMode = true;
-    Serial.println(F("State changed: editMode"));
+    switch(selectedMenuOption){
+      case 0:
+        config.showInDisplay1 = selectedSubMenuOption - minSubmenuIndex;
+        saveConfig();
+        inSubMenu = false;
+        break;
+      case 1:
+        config.showInDisplay2 = selectedSubMenuOption - minSubmenuIndex;
+        saveConfig();
+        inSubMenu = false;
+        break;
+      default:
+        inSubMenu = false;
+        editMode = true;
+        Serial.println(F("State changed: editMode"));
+        break;
+    }
   } else if(editMode){
     // TO-DO: Do something in edit mode
   } else {
@@ -253,6 +321,9 @@ void onButtonCenterHold(Button& btn){
     Serial.println(F("State changed: inMenu"));
   }
 
+  HT1621_all_off(6, 0);
+  HT1621_all_off(6, 1);
+
   updateScreens();
 }
 
@@ -264,7 +335,31 @@ void onButtonDownPressed(Button& btn){
     
     if(selectedMenuOption < maxMenuIndex)
       selectedMenuOption++;
+
+    switch(selectedMenuOption){
+      case 0:
+      case 1:
+        minSubmenuIndex = 7;
+        maxSubmenuIndex = 10;
+        break;
+      case 2:
+      case 3:
+        // I'ts numeric, no submenu options
+        break;
+      case 4:
+      case 5:
+        minSubmenuIndex = 11;
+        maxSubmenuIndex = 12;
+        break;
+    }
+
+    selectedSubMenuOption = minSubmenuIndex;
   } else if(inSubMenu){
+    HT1621_all_off(16, 0);
+    HT1621_all_off(16, 1);
+    
+    if(selectedSubMenuOption < maxSubmenuIndex)
+      selectedSubMenuOption++;
   } else if(editMode){
   } else {
     config.trip_partial -= 1;
@@ -277,18 +372,6 @@ void onButtonDownPressed(Button& btn){
   }
   updateScreens();
 }
-
-// void onSensorDetect(Button& btn){
-//   Serial.println(F("SENSOR detected"));
-//   //config.trip_partial += config.circumference / 100000.0; // Count 1 every 100 meters
-//   config.trip_partial += 1;
-//   displayValues[0] = config.trip_partial;
-
-//   Serial.print("trip_partial: ");
-//   Serial.println(config.trip_partial, 6);
-
-//   updateScreens();
-// }
 
 void calculateHeading() {
   unsigned long currentMillis = millis();
@@ -330,27 +413,57 @@ void calculateHeading() {
 
 void updateScreens() {
   if(inMenu){
-    config.version = 000;
-    saveConfig();
-    Serial.println(F("--> CONFIG CLEARED"));
-    inMenu = false;
+    // config.version = 000;
+    // saveConfig();
+    // Serial.println(F("--> CONFIG CLEARED"));
+    // inMenu = false;
 
-  //   display_word(selectedMenuOption, 0);
-  //   display_word(minSubmenuIndex, 1);
-  // } else if(inSubMenu){
-  //   display_word(selectedSubMenuOption, 0);
-  //   display_data(12345, 1, 1, 0, 1);
-  // } else if(editMode){
-  //   display_data(88888, 1, 1, 0, 0);
-  //   // display_data(88888, 1, 1, 0, 1);
-  //   HT1621_all_off(6, 1);
-  //   display_mark(1, 1);
-  //   delay(500);
-  //   clear_mark(1, 1);
-  //   delay(500);
+    display_word(selectedMenuOption, 0);
+    // display_word(minSubmenuIndex, 1);
+    HT1621_all_off(6, 1);
+  } else if(inSubMenu){
+    display_word(selectedMenuOption, 0);
+    display_word(selectedSubMenuOption, 1);
+  } else if(editMode){
+    display_number(88888, 1, 1, 0, 0);
+    display_number(88888, 1, 1, 0, 1);
+    // HT1621_all_off(6, 1);
+    // display_mark(1, 1);
+    // delay(500);
+    // clear_mark(1, 1);
+    delay(500);
   } else {
-    display_data(displayValues[0], 1, 1, 0, 0);
-    display_degrees(displayValues[2], 0, 0, 1, 1);
+    // Display 1
+    switch(config.showInDisplay1){
+      case 0:
+        display_number(displayValues[0], 1, 1, 0, 0);
+        break;
+      case 1:
+        display_number(displayValues[1], 1, 0, 0, 0);
+        break;
+      case 2:
+        display_degrees(displayValues[2], 0, 0, 1, 0);
+        break;
+      case 3:
+        display_number(displayValues[3], 1, 0, 0, 0);
+        break;
+    }
+
+    // Display 2
+    switch(config.showInDisplay2){
+      case 0:
+        display_number(displayValues[0], 1, 1, 0, 1);
+        break;
+      case 1:
+        display_number(displayValues[1], 1, 0, 0, 1);
+        break;
+      case 2:
+        display_degrees(displayValues[2], 0, 0, 1, 1);
+        break;
+      case 3:
+        display_number(displayValues[3], 1, 0, 0, 1);
+        break;
+    }
   }
 }
 
