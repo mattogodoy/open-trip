@@ -35,11 +35,27 @@ const int pin_light = 17;
 int maxMenuIndex = 6;
 int minSubmenuIndex = 7; // Partial
 int maxSubmenuIndex = 10; // Speed
-
 int selectedMenuOption = 0;
 int selectedSubMenuOption = minSubmenuIndex;
 int btnHoldDelay = 1000;
 int btnHoldRepeat = 30;
+
+float trip_partial = 0;
+float trip_total = 0;
+float previousTripTotal = 0;
+
+unsigned long previousMillis = 0;
+unsigned long previousMillisSpeed = 0;
+const long displayRefreshInterval = 500;
+
+bool inMenu = false;
+bool inSubMenu = false;
+bool lightsOn = false;
+bool autoCalibrate = false;
+
+// Interruption variables for wheel sensor
+const byte interruptPin = pin_sensor;
+volatile byte revs = 0;
 
 // This is to convert float values to int and display them
 long int displayValues[] = {
@@ -48,9 +64,6 @@ long int displayValues[] = {
     0, // Heading
     0  // Speed
 };
-
-float trip_partial = 0;
-float trip_total = 0;
 
 struct Configuration {
   int version;
@@ -62,26 +75,12 @@ struct Configuration {
   float declinationAngle;
 } config;
 
-bool inMenu = false;
-bool inSubMenu = false;
-bool lightsOn = false;
-bool autoCalibrate = false;
-
-unsigned long previousMillis = 0;
-unsigned long previousMillisSpeed = 0;
-float previousTripTotal = 0;
-const long displayRefreshInterval = 500;
-
 PushButton button_up = PushButton(pin_button_up);
 PushButton button_center = PushButton(pin_button_center);
 PushButton button_down = PushButton(pin_button_down);
 
 // Assign a unique ID to this sensor at the same time
 Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
-
-// Interruption variables for wheel sensor
-const byte interruptPin = pin_sensor;
-volatile byte revs = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -134,11 +133,13 @@ void revsCount() {
 }
 
 void sensorUpdate() {
+  // detachInterrupt(0);//Disable interrupt while calculating
+
   // This will count as many revolutions as added by 
   // the interruptions and reset them for the next loop
   trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
   trip_total += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
-  
+
   if(revs > 0){
     revs = 0;
     
@@ -150,6 +151,8 @@ void sensorUpdate() {
     
     updateScreens();
   }
+
+  // attachInterrupt(digitalPinToInterrupt(interruptPin), revsCount, FALLING); //enable interrupt
 }
 
 void loadConfig() {
@@ -426,11 +429,11 @@ void calculateSpeed(){
   unsigned long currentMillis = millis();
 
   // Update data and display
-  if (currentMillis - previousMillisSpeed >= 1000) {
+  if (currentMillis - previousMillisSpeed >= displayRefreshInterval) {
     previousMillisSpeed = currentMillis;
 
-    float kms = (trip_total - previousTripTotal) / 10;
-    displayValues[3] = kms * 3600;
+    float km = (trip_total - previousTripTotal) / 10;
+    displayValues[3] = (km * 3600) + 0.5; // Adding 0.5 is the easiest way to round up (int to float trims)
     previousTripTotal = trip_total;
  
     updateScreens();
@@ -480,7 +483,7 @@ void updateScreens() {
         display_degrees(displayValues[2], 0, 0, 0, 0);
         break;
       case 3:
-        display_number(displayValues[3], 1, 1, 1, 0);
+        display_number(displayValues[3], 0, 1, 1, 0);
         break;
     }
 
@@ -496,8 +499,9 @@ void updateScreens() {
         display_degrees(displayValues[2], 0, 0, 0, 1);
         break;
       case 3:
-        display_number(displayValues[3], 1, 1, 1, 1);
+        display_number(displayValues[3], 0, 1, 1, 1);
         break;
     }
   }
 }
+
