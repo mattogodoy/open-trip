@@ -42,3 +42,12 @@ I will try to keep this README file as updated as I can, and I'll put a list of 
 
 * Install Arduino libraries [to-do]
 
+# Notes
+
+### Wheel circumference and lying odometer
+
+It's a well known fact that cars and motorcycle's speedometers lie. They always read higher than the real value (http://gpssystems.net/accurate-gpsbased-speedometer/).
+The reasons for that are beyond this project, but I'm using my GPS to measure distances and try to imitate the results in the *open-trip* odometer.
+
+I measured the wheel in my bike and I got 2007 milimeters. It turns out that I'm getting wrong reads, so after some calculation, I ended up using 2045 milimeters and this gives me the exact same distance number as the GPS, so I'll stick to that value. The bike's own odometer always shows more.
+

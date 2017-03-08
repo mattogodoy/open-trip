@@ -1,8 +1,3 @@
-// Base includes
-#include <EEPROM.h>
-#include "EEPROMAnything.h"
-#include "ArraySize.h"
-
 // Buttons includes
 #include <Button.h>
 #include <ButtonEventCallback.h>
@@ -175,7 +170,7 @@ void loadConfig() {
     config.showInDisplay2 = 2;
     config.lightsOn = 0;
     config.autoCalibrate = 0;
-    config.circumference = 2007; // KTM 1190 Adventure with Conti Trail Attack
+    config.circumference = 2045; // KTM 1190 Adventure with Conti Trail Attack
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
 
@@ -504,4 +499,3 @@ void updateScreens() {
     }
   }
 }
-

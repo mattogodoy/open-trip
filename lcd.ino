@@ -354,7 +354,11 @@ void display_number(long int t, int p, char s1, char s2, int screen){
   // ==========================
   // This abomination is to avoid writing 0s in blank spaces. Sorry.
   if(t < 10){
-    dispnum[2] = char_null;
+    if(p > 0){
+      dispnum[2] = char_null;
+    } else {
+      dispnum[1] = char_null;
+    }
   }
   if(t < 100){
     dispnum[2] = char_null;
@@ -449,4 +453,3 @@ void clear_mark(int up, int screen){
   else
     Write_1621(8, arrow, screen);
 }
-
