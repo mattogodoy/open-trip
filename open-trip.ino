@@ -170,7 +170,7 @@ void loadConfig() {
     config.showInDisplay2 = 2;
     config.lightsOn = 0;
     config.autoCalibrate = 0;
-    config.circumference = 2045; // KTM 1190 Adventure with Conti Trail Attack
+    config.circumference = 2040; // KTM 1190 Adventure with Conti Trail Attack
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
 
@@ -424,7 +424,7 @@ void calculateSpeed(){
   unsigned long currentMillis = millis();
 
   // Update data and display
-  if (currentMillis - previousMillisSpeed >= displayRefreshInterval) {
+  if (currentMillis - previousMillisSpeed >= 1000) {
     previousMillisSpeed = currentMillis;
 
     float km = (trip_total - previousTripTotal) / 10;
