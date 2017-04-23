@@ -20,8 +20,8 @@ const int pin_joystick_up = 9;
 const int pin_joystick_down = 10;
 const int pin_motor_output_a = 11;
 const int pin_motor_output_b = 12;
-const int pin_button_up = 14;
-const int pin_button_center = 15;
+const int pin_button_up = 15;
+const int pin_button_center = 14;
 const int pin_button_down = 16;
 const int pin_light = 17;
 
@@ -35,18 +35,19 @@ int selectedSubMenuOption = minSubmenuIndex;
 int btnHoldDelay = 1000;
 int btnHoldRepeat = 30;
 
-float trip_partial = 0;
-float trip_total = 0;
 float previousTripTotal = 0;
 
 unsigned long previousMillis = 0;
 unsigned long previousMillisSpeed = 0;
+unsigned long previousMillisDistance = 0;
 const long displayRefreshInterval = 500;
+const long autoSaveAfter = 3000;
 
 bool inMenu = false;
 bool inSubMenu = false;
 bool lightsOn = false;
 bool autoCalibrate = false;
+bool distanceAlreadySaved = true;
 
 // Interruption variables for wheel sensor
 const byte interruptPin = pin_sensor;
@@ -68,6 +69,8 @@ struct Configuration {
   int autoCalibrate;
   int circumference;
   float declinationAngle;
+  float trip_partial = 0;
+  float trip_total = 0;
 } config;
 
 PushButton button_up = PushButton(pin_button_up);
@@ -111,6 +114,8 @@ void setup() {
   }
 
   revs = 0;
+
+  updateScreens();
 }
 
 void loop() {
@@ -120,6 +125,7 @@ void loop() {
   sensorUpdate();
   calculateHeading();
   calculateSpeed();
+  autoSave();
 }
 
 // Interrupt Service Routine (ISR)
@@ -132,17 +138,19 @@ void sensorUpdate() {
 
   // This will count as many revolutions as added by 
   // the interruptions and reset them for the next loop
-  trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
-  trip_total += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  config.trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  config.trip_total += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
 
   if(revs > 0){
     revs = 0;
+    distanceAlreadySaved = false;
+    previousMillisDistance = millis(); // Renew time for auto-save
     
     Serial.println(F("SENSOR detected"));
-    displayValues[0] = trip_partial;
-    displayValues[1] = trip_total;
+    displayValues[0] = config.trip_partial;
+    displayValues[1] = config.trip_total;
     Serial.print("trip_partial: ");
-    Serial.println(trip_partial, 6);
+    Serial.println(config.trip_partial, 6);
     
     updateScreens();
   }
@@ -162,19 +170,26 @@ void loadConfig() {
   Serial.println(config.autoCalibrate);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
+  Serial.println(config.trip_partial);
+  Serial.println(config.trip_total);
 
   if(config.version != 123){
     Serial.println(F("---> No configuration data found. Setting up default values..."));
     
-    config.showInDisplay1 = 0;
-    config.showInDisplay2 = 2;
+    config.showInDisplay1 = 0; // Partial distance
+    config.showInDisplay2 = 3; // Speed
     config.lightsOn = 0;
     config.autoCalibrate = 0;
     config.circumference = 2040; // KTM 1190 Adventure with Conti Trail Attack
     config.declinationAngle = 0.01425352f; // Madrid
     config.version = 123;
+    config.trip_partial = 0;
+    config.trip_total = 0;
 
     saveConfig();
+  } else {
+    displayValues[0] = config.trip_partial;
+    displayValues[1] = config.trip_total;
   }
 
   Serial.println(F("---> DONE"));
@@ -191,6 +206,8 @@ void saveConfig(){
   Serial.println(config.autoCalibrate);
   Serial.println(config.circumference);
   Serial.println(config.declinationAngle, 6);
+  Serial.println(config.trip_partial);
+  Serial.println(config.trip_total);
 }
 
 void onButtonUpPressed(Button& btn){
@@ -235,10 +252,10 @@ void onButtonUpPressed(Button& btn){
       }
     }
   } else {
-    trip_partial += 1;
-    trip_total += 1;
-    displayValues[0] = trip_partial;
-    displayValues[1] = trip_total;
+    config.trip_partial += 1;
+    config.trip_total += 1;
+    displayValues[0] = config.trip_partial;
+    displayValues[1] = config.trip_total;
   }
 
   updateScreens();
@@ -297,8 +314,8 @@ void onButtonCenterReleased(Button& btn, int duration){
         break;
     }
   } else {
-    trip_partial = 0;
-    displayValues[0] = trip_partial;
+    config.trip_partial = 0;
+    displayValues[0] = config.trip_partial;
   }
   updateScreens();
 }
@@ -365,24 +382,27 @@ void onButtonDownPressed(Button& btn){
       }
     }
   } else {
-    trip_partial -= 1;
-    trip_total -= 1;
+    config.trip_partial -= 1;
+    config.trip_total -= 1;
 
-    if(trip_partial < 0){
-      trip_partial = 0;
+    if(config.trip_partial < 0){
+      config.trip_partial = 0;
     }
 
-    if(trip_total < 0){
-      trip_total = 0;
+    if(config.trip_total < 0){
+      config.trip_total = 0;
     }
 
-    displayValues[0] = trip_partial;
-    displayValues[1] = trip_total;
+    displayValues[0] = config.trip_partial;
+    displayValues[1] = config.trip_total;
   }
   updateScreens();
 }
 
 void calculateHeading() {
+  if(config.showInDisplay1 != 2 && config.showInDisplay2 != 2)
+    return;
+
   unsigned long currentMillis = millis();
 
   // Get a new compass event
@@ -420,6 +440,21 @@ void calculateHeading() {
   }
 }
 
+void autoSave(){
+  if(distanceAlreadySaved == true){
+    return;
+  }
+
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillisDistance >= autoSaveAfter) {
+    Serial.println(F("Auto-saving distance..."));
+
+    saveConfig();
+    distanceAlreadySaved = true;
+  }
+}
+
 void calculateSpeed(){
   unsigned long currentMillis = millis();
 
@@ -427,9 +462,9 @@ void calculateSpeed(){
   if (currentMillis - previousMillisSpeed >= 1000) {
     previousMillisSpeed = currentMillis;
 
-    float km = (trip_total - previousTripTotal) / 10;
+    float km = (config.trip_total - previousTripTotal) / 10;
     displayValues[3] = (km * 3600) + 0.5; // Adding 0.5 is the easiest way to round up (int to float trims)
-    previousTripTotal = trip_total;
+    previousTripTotal = config.trip_total;
  
     updateScreens();
   }
@@ -499,3 +534,4 @@ void updateScreens() {
     }
   }
 }
+
