@@ -8,11 +8,9 @@ Since the off-the-shelf solutions like the [ICO Rallye](http://www.icoracing.com
 
 My goal is to emulate the most important features of the ICO Rallye so you won't miss anything.
 
-# IMPORTANT
+# DETAILS
 
-This is currently a work in progress, so the code is functional but not all of the features have been implemented yet. The implementation is going to be incremental and ordered by what I consider prioritary.
-
-I will try to keep this README file as updated as I can, and I'll put a list of the hardware components once I have the definitive ones.
+A more detailed guide is available at [my blog](https://matto.io/roadbook-con-tripmaster/). It is written in spanish, but you'll understand what's important.
 
 ### Hardware
 * Two configurable backlit LCD displays
