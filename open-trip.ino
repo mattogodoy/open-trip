@@ -134,15 +134,19 @@ void revsCount() {
 }
 
 void sensorUpdate() {
-  // detachInterrupt(0);//Disable interrupt while calculating
 
-  // This will count as many revolutions as added by 
-  // the interruptions and reset them for the next loop
-  config.trip_partial += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
-  config.trip_total += (config.circumference / 100000.0) * revs; // Count 1 every 100 meters
+  byte revsTmp = revs;
 
-  if(revs > 0){
-    revs = 0;
+  if(revsTmp > 0)
+  {
+    // This will count as many revolutions as added by 
+    // the interruptions and reset them for the next loop
+    config.trip_partial += (config.circumference / 100000.0) * revsTmp; // Count 1 every 100 meters
+    config.trip_total += (config.circumference / 100000.0) * revsTmp; // Count 1 every 100 meters
+
+      
+    revs -= revsTmp;  
+
     distanceAlreadySaved = false;
     previousMillisDistance = millis(); // Renew time for auto-save
     
@@ -155,7 +159,6 @@ void sensorUpdate() {
     updateScreens();
   }
 
-  // attachInterrupt(digitalPinToInterrupt(interruptPin), revsCount, FALLING); //enable interrupt
 }
 
 void loadConfig() {
